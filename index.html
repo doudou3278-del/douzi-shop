@@ -119,7 +119,19 @@
   .about .img{border-radius:4px;overflow:hidden;border:1px solid var(--line)}
   .about h2{font-family:var(--serif);font-weight:400;font-size:clamp(36px,4.6vw,64px);line-height:1.02;margin:18px 0 22px}
   .about p{color:var(--muted);max-width:460px}
-  .specs{display:grid;grid-template-columns:repeat(3,1fr);margin-top:36px;border-top:1px solid var(--line)}
+  .specs{display:grid;grid-template-columns:repeat(2,1fr);margin-top:36px;border-top:1px solid var(--line)}
+  .drop{margin-top:28px;border:1px solid rgba(217,178,95,.35);background:linear-gradient(180deg,rgba(217,178,95,.08),rgba(217,178,95,.02));border-radius:6px;padding:20px 22px}
+  .drop-head{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
+  .drop .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(217,178,95,.6);animation:ping 1.8s ease-out infinite}
+  @keyframes ping{70%{box-shadow:0 0 0 9px rgba(217,178,95,0)}100%{box-shadow:0 0 0 0 rgba(217,178,95,0)}}
+  .cd{display:flex;align-items:flex-start;gap:10px;margin:14px 0 10px}
+  .cd div{min-width:58px}
+  .cd b{display:block;font-family:var(--serif);font-weight:400;font-size:clamp(40px,4.4vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+  .cd span{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .cd i{font-style:normal;font-family:var(--serif);font-size:clamp(32px,3.4vw,44px);line-height:1.1;color:var(--muted)}
+  .drop-date{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+  .drop.live .cd{display:none}
+  .drop.live .drop-head{font-size:13px}
   .specs div{padding:18px 0}
   .specs b{display:block;font-family:var(--serif);font-weight:400;font-size:34px}
   .specs span{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
@@ -221,7 +233,7 @@
     <div class="hero-art reveal">
       <div class="frame"><img src="img/front.jpg" alt="Saint Louis custom minifigure on a display base"></div>
       <span class="num">No. 001 / Wave 1</span>
-      <div class="tag">Now available<strong>Saint Louis</strong></div>
+      <div class="tag" id="heroTag">Wave 1 · Dec 25<strong>Saint Louis</strong></div>
     </div>
   </section>
 
@@ -255,7 +267,16 @@
       <div class="specs">
         <div><b>6</b><span>Printed sides</span></div>
         <div><b>2</b><span>Hair pieces</span></div>
-        <div><b>1</b><span>Wave at a time</span></div>
+      </div>
+      <div class="drop" id="drop" aria-live="polite">
+        <div class="drop-head"><span class="dot"></span><span id="dropLabel">Wave 1 drops in</span></div>
+        <div class="cd" id="cd">
+          <div><b data-u="d">00</b><span>Days</span></div><i>:</i>
+          <div><b data-u="h">00</b><span>Hours</span></div><i>:</i>
+          <div><b data-u="m">00</b><span>Min</span></div><i>:</i>
+          <div><b data-u="s">00</b><span>Sec</span></div>
+        </div>
+        <div class="drop-date">Dec 25, 2026 · 00:00 China Time (UTC+8)</div>
       </div>
     </div>
   </section>
@@ -543,6 +564,30 @@ const Intro = (()=>{
   else Intro.start();
 })();
 $('#replay').onclick=()=>{ scrollTo({top:0}); Intro.start(); };
+
+/* ================= WAVE 1 COUNTDOWN ================= */
+(function countdown(){
+  const DROP = Date.parse('2026-12-25T00:00:00+08:00'); // Dec 25, 00:00 China time
+  const el = $('#drop'); if(!el) return;
+  const cells = {}; el.querySelectorAll('[data-u]').forEach(b=>cells[b.dataset.u]=b);
+  const pad = n => String(n).padStart(2,'0');
+  function tick(){
+    const ms = DROP - Date.now();
+    if(ms <= 0){
+      el.classList.add('live');
+      $('#dropLabel').textContent = 'Wave 1 is live — now available';
+      $('#heroTag').firstChild.textContent = 'Now available';
+      return;
+    }
+    const s = Math.floor(ms/1000);
+    cells.d.textContent = pad(Math.floor(s/86400));
+    cells.h.textContent = pad(Math.floor(s%86400/3600));
+    cells.m.textContent = pad(Math.floor(s%3600/60));
+    cells.s.textContent = pad(s%60);
+    setTimeout(tick, 1000 - (Date.now()%1000));
+  }
+  tick();
+})();
 
 /* ================= DATA (Supabase) ================= */
 (async function loadData(){
