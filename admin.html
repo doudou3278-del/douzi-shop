@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>商家后台 — DOUZI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0b0c;--bg2:#121214;--card:#17171a;--line:#26262b;--text:#f2efe8;--muted:#8d8a84;--accent:#d9b25f;--danger:#e5484d;
+    --serif:'Instrument Serif',Georgia,serif;--sans:'Inter',system-ui,"PingFang SC","Microsoft YaHei",sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  input,textarea,select{font:inherit;color:inherit}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:999px;font-size:14px;transition:.2s;white-space:nowrap}
+  .btn.primary{background:var(--text);color:var(--bg)} .btn.primary:hover{background:var(--accent)}
+  .btn.ghost{border:1px solid var(--line)} .btn.ghost:hover{border-color:var(--text)}
+  .btn.danger{border:1px solid rgba(229,72,77,.4);color:#ff8a8d} .btn.danger:hover{background:var(--danger);color:#fff}
+  .btn:disabled{opacity:.45;pointer-events:none}
+  .hidden{display:none!important}
+
+  /* login */
+  .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login form{width:min(380px,100%);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:32px}
+  .login h1{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1}
+  .login .sub{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent);margin:8px 0 26px;text-transform:uppercase}
+  .err{color:#ff8a8d;font-size:14px;min-height:20px;margin-bottom:10px}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+  .field label{font-size:13px;color:var(--muted)}
+  .field input,.field textarea,.field select{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:11px 12px;font-size:15px}
+  .field textarea{min-height:120px;resize:vertical}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent)}
+
+  /* app */
+  .head{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px clamp(16px,4vw,48px);background:rgba(11,11,12,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .head h2{font-family:var(--serif);font-weight:400;font-size:28px}
+  .head small{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--accent);margin-left:10px}
+  .head .r{display:flex;gap:8px;align-items:center}
+  .who{font-size:13px;color:var(--muted);margin-right:6px}
+  main{max-width:1100px;margin:0 auto;padding:28px clamp(16px,4vw,48px) 80px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:26px}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .stat b{display:block;font-family:var(--serif);font-weight:400;font-size:38px;line-height:1}
+  .stat span{font-size:13px;color:var(--muted)}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+  .bar h3{font-size:18px}
+  .list{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .row{display:grid;grid-template-columns:64px 1fr auto auto;gap:14px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+  .row:last-child{border-bottom:0}
+  .row img,.row .ph{width:64px;height:64px;object-fit:cover;border-radius:6px;background:var(--card);border:1px solid var(--line)}
+  .row .t{font-weight:600} .row .s{font-size:13px;color:var(--muted)}
+  .pill{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
+  .pill.on{color:#7ee2a8;border-color:rgba(126,226,168,.35)} .pill.off{color:var(--muted)}
+  .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .acts .btn{padding:7px 12px;font-size:13px}
+  .empty{padding:24px;color:var(--muted);background:var(--bg2)}
+  .box{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:20px;margin-top:26px}
+  .inline{display:flex;gap:10px;align-items:flex-end}.inline .field{flex:1;margin:0}
+
+  .drawer{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.7);display:none;justify-content:flex-end}
+  .drawer.open{display:flex}
+  .panel{width:min(620px,100%);height:100%;background:var(--bg2);border-left:1px solid var(--line);overflow:auto;padding:26px;display:flex;flex-direction:column}
+  .panel h3{font-family:var(--serif);font-weight:400;font-size:32px;margin-bottom:18px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px}
+  .im{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+  .im img{width:100%;height:100%;object-fit:cover}
+  .im .cover{position:absolute;top:6px;left:6px;font-size:11px;background:var(--accent);color:#111;padding:1px 6px;border-radius:3px;font-weight:600}
+  .im .ctl{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;padding:16px 4px 4px;background:linear-gradient(transparent,rgba(0,0,0,.85))}
+  .im .ctl button{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.6);font-size:12px}
+  .im .ctl button:hover{background:var(--text);color:var(--bg)}
+  .upl{aspect-ratio:1;border:1px dashed #44444b;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:13px;cursor:pointer;text-align:center;padding:6px}
+  .upl:hover{border-color:var(--accent);color:var(--text)} .upl b{font-size:26px;font-weight:300;line-height:1}
+  .foot{position:sticky;bottom:-26px;margin:auto -26px -26px;padding:14px 26px;background:var(--bg2);border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+  .confirm{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:20px}
+  .confirm.open{display:flex}
+  .confirm .c{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:22px;max-width:420px;width:100%}
+  .confirm p{margin-bottom:18px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:11px 18px;border-radius:999px;font-size:14px;transition:.3s;z-index:40;pointer-events:none;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .warn{border:1px solid rgba(229,72,77,.4);background:rgba(229,72,77,.08);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:14px}
+  @media (max-width:700px){
+    .row{grid-template-columns:56px 1fr}.row .st,.row .acts{grid-column:1/-1;justify-content:flex-start}
+    .g3{grid-template-columns:1fr}.who{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="warn hidden" id="cfgWarn" style="margin:20px">还没有填写 <b>config.js</b> 里的 Supabase 地址和密钥，后台暂时不能用。请按 README 里的步骤操作。</div>
+
+<!-- Login -->
+<section class="login hidden" id="loginView">
+  <form id="loginForm">
+    <h1>DOUZI</h1>
+    <div class="sub">Merchant admin · 商家后台</div>
+    <div class="field"><label for="lEmail">邮箱</label><input id="lEmail" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="lPass">密码</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+    <div class="err" id="lErr"></div>
+    <button class="btn primary" style="width:100%" id="lBtn">登录</button>
+    <p style="margin-top:16px;font-size:13px;color:var(--muted)"><a href="index.html">← 返回商店</a></p>
+  </form>
+</section>
+
+<!-- App -->
+<section class="hidden" id="appView">
+  <div class="head">
+    <div><h2 style="display:inline">商家后台</h2><small>DOUZI ADMIN</small></div>
+    <div class="r"><span class="who" id="who"></span><a class="btn ghost" href="index.html" target="_blank">查看商店 ↗</a><button class="btn ghost" id="logout">退出</button></div>
+  </div>
+  <main>
+    <div class="warn hidden" id="notAdmin">这个账号还不是管理员。请在 Supabase 的 SQL Editor 里运行 setup.sql 最后那一句，把你的邮箱加为管理员，然后刷新页面。</div>
+    <div class="stats">
+      <div class="stat"><b id="sAll">0</b><span>全部商品</span></div>
+      <div class="stat"><b id="sOn">0</b><span>上架中</span></div>
+      <div class="stat"><b id="sOff">0</b><span>已下架</span></div>
+    </div>
+    <div class="bar"><h3>商品管理</h3><button class="btn primary" id="addBtn">＋ 添加商品</button></div>
+    <div class="list" id="list"><div class="empty">正在加载…</div></div>
+    <div class="box">
+      <h3 style="font-size:18px;margin-bottom:14px">店铺设置</h3>
+      <form class="inline" id="setForm"><div class="field"><label for="wx">微信号（顾客复制的联系方式）</label><input id="wx" maxlength="60"></div><button class="btn primary" type="submit">保存</button></form>
+    </div>
+  </main>
+</section>
+
+<!-- Edit drawer -->
+<div class="drawer" id="drawer">
+  <form class="panel" id="pForm" autocomplete="off">
+    <h3 id="dTitle">编辑商品</h3>
+    <div class="field"><label for="fTitle">商品名称（顾客看到的英文名）</label><input id="fTitle" required maxlength="120" placeholder="e.g. Saint Louis (Wave 1)"></div>
+    <div class="g3">
+      <div class="field"><label for="fPrice">价格（¥）</label><input id="fPrice" type="number" min="0" step="0.01" required></div>
+      <div class="field"><label for="fCat">分类</label><select id="fCat"><option>Minifigs</option><option>Accessories</option><option>Other</option></select></div>
+      <div class="field"><label for="fStatus">状态</label><select id="fStatus"><option value="active">上架</option><option value="hidden">下架（顾客看不到）</option></select></div>
+    </div>
+    <div class="g3">
+      <div class="field"><label for="fCond">成色 Condition</label><input id="fCond" maxlength="40" placeholder="New"></div>
+      <div class="field"><label for="fGrade">等级 Grade（可空）</label><input id="fGrade" maxlength="40" placeholder="A grade"></div>
+      <div class="field"><label for="fSort">排序（数字小的在前）</label><input id="fSort" type="number" step="1"></div>
+    </div>
+    <div class="field"><label for="fDesc">商品描述（英文）</label><textarea id="fDesc" maxlength="3000"></textarea></div>
+    <div class="field"><label>商品图片（第一张是封面，用箭头调整顺序）</label>
+      <div class="imgs" id="fImgs"></div>
+      <input type="file" id="fFile" accept="image/*" multiple hidden>
+    </div>
+    <div class="foot">
+      <button type="button" class="btn ghost" id="dCancel">取消</button>
+      <button type="submit" class="btn primary" id="dSave">保存</button>
+    </div>
+  </form>
+</div>
+
+<div class="confirm" id="confirm"><div class="c"><p id="cMsg"></p><div class="acts"><button class="btn ghost" id="cNo">取消</button><button class="btn danger" id="cYes">确认删除</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>'¥'+(Number(n)||0).toFixed(2);
+const BUCKET='product-images';
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+
+const cfg=window.DOUZI_CONFIG||{};
+if(!window.supabase||!cfg.SUPABASE_URL||cfg.SUPABASE_URL.includes('YOUR-')){ $('#cfgWarn').classList.remove('hidden'); throw new Error('Missing Supabase config'); }
+const sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
+
+let products=[], editing=null, imgs=[], uploading=0;
+
+/* ---------- auth ---------- */
+async function showForSession(session){
+  if(!session){ $('#loginView').classList.remove('hidden'); $('#appView').classList.add('hidden'); return; }
+  $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden');
+  $('#who').textContent=session.user.email||'';
+  const {data:isAdmin}=await sb.rpc('is_admin');
+  $('#notAdmin').classList.toggle('hidden',!!isAdmin);
+  $('#addBtn').disabled=!isAdmin;
+  loadAll();
+}
+sb.auth.getSession().then(({data})=>showForSession(data.session));
+sb.auth.onAuthStateChange((ev,session)=>{ if(ev==='SIGNED_IN'||ev==='SIGNED_OUT') showForSession(session); });
+
+$('#loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('#lErr').textContent=''; $('#lBtn').disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:$('#lEmail').value.trim(),password:$('#lPass').value});
+  $('#lBtn').disabled=false;
+  if(error) $('#lErr').textContent='登录失败：邮箱或密码不对。';
+});
+$('#logout').onclick=()=>sb.auth.signOut();
+
+/* ---------- data ---------- */
+async function loadAll(){
+  const [p,s]=await Promise.all([
+    sb.from('products').select('*').order('sort',{ascending:true}).order('updated_at',{ascending:false}),
+    sb.from('settings').select('wechat').eq('id',1).maybeSingle()
+  ]);
+  if(p.error){ $('#list').innerHTML=`<div class="empty">加载失败：${esc(p.error.message)}</div>`; return; }
+  products=p.data||[];
+  if(s.data) $('#wx').value=s.data.wechat||'';
+  renderList();
+}
+function renderList(){
+  const on=products.filter(p=>p.status!=='hidden').length;
+  $('#sAll').textContent=products.length; $('#sOn').textContent=on; $('#sOff').textContent=products.length-on;
+  $('#list').innerHTML=products.length?products.map(p=>{const im=(p.images||[])[0];return `
+    <div class="row" data-id="${esc(p.id)}">
+      ${im?`<img src="${esc(im)}" alt="">`:'<div class="ph"></div>'}
+      <div><div class="t">${esc(p.title)}</div><div class="s">${esc(p.category)} · ${fmt(p.price)}${p.grade?' · '+esc(p.grade):''}</div></div>
+      <div class="st"><span class="pill ${p.status==='hidden'?'off':'on'}">${p.status==='hidden'?'已下架':'上架中'}</span></div>
+      <div class="acts">
+        <button class="btn ghost" data-a="edit">编辑</button>
+        <button class="btn ghost" data-a="toggle">${p.status==='hidden'?'上架':'下架'}</button>
+        <button class="btn danger" data-a="del">删除</button>
+      </div>
+    </div>`}).join(''):'<div class="empty">还没有商品，点"添加商品"开始。</div>';
+}
+$('#list').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]'); if(!b) return;
+  const p=products.find(x=>x.id===b.closest('.row').dataset.id); if(!p) return;
+  if(b.dataset.a==='edit') openDrawer(p);
+  if(b.dataset.a==='toggle'){
+    b.disabled=true;
+    const {error}=await sb.from('products').update({status:p.status==='hidden'?'active':'hidden'}).eq('id',p.id);
+    if(error){ toast('操作失败：'+error.message); b.disabled=false; return; }
+    toast(p.status==='hidden'?'已上架':'已下架'); loadAll();
+  }
+  if(b.dataset.a==='del' && await ask(`确定删除「${p.title}」吗？删除后无法恢复。`)){
+    const {error}=await sb.from('products').delete().eq('id',p.id);
+    if(error){ toast('删除失败：'+error.message); return; }
+    toast('已删除'); loadAll();
+  }
+});
+$('#setForm').addEventListener('submit',async e=>{
+  e.preventDefault(); const v=$('#wx').value.trim(); if(!v) return;
+  const {error}=await sb.from('settings').upsert({id:1,wechat:v});
+  toast(error?'保存失败：'+error.message:'微信号已保存');
+});
+
+/* ---------- confirm ---------- */
+let resolver=null;
+function ask(m){ $('#cMsg').textContent=m; $('#confirm').classList.add('open'); return new Promise(r=>resolver=r); }
+function closeAsk(v){ $('#confirm').classList.remove('open'); if(resolver){resolver(v);resolver=null;} }
+$('#cYes').onclick=()=>closeAsk(true); $('#cNo').onclick=()=>closeAsk(false);
+
+/* ---------- editor ---------- */
+function openDrawer(p){
+  editing=p; imgs=p?(p.images||[]).slice():[];
+  $('#dTitle').textContent=p?'编辑商品':'添加商品';
+  $('#fTitle').value=p?.title||''; $('#fPrice').value=p?.price??''; $('#fCat').value=p?.category||'Minifigs';
+  $('#fStatus').value=p?.status||'active'; $('#fCond').value=p?.condition??'New'; $('#fGrade').value=p?.grade||'';
+  $('#fSort').value=p?.sort??0; $('#fDesc').value=p?.description||'';
+  renderImgs(); $('#drawer').classList.add('open');
+}
+function closeDrawer(){ $('#drawer').classList.remove('open'); }
+$('#dCancel').onclick=closeDrawer;
+$('#drawer').addEventListener('click',e=>{ if(e.target.id==='drawer') closeDrawer(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); closeAsk(false); } });
+
+function renderImgs(){
+  $('#fImgs').innerHTML=imgs.map((s,i)=>`<div class="im">${i===0?'<span class="cover">封面</span>':''}<img src="${esc(s)}" alt=""><div class="ctl">
+    <button type="button" data-m="-1" data-i="${i}" title="往前">←</button><button type="button" data-x="${i}" title="移除">✕</button><button type="button" data-m="1" data-i="${i}" title="往后">→</button></div></div>`).join('')
+    +`<label class="upl" for="fFile"><b>＋</b>${uploading?`上传中 (${uploading})…`:'上传图片'}</label>`;
+}
+$('#fImgs').addEventListener('click',e=>{
+  const x=e.target.closest('[data-x]'), m=e.target.closest('[data-m]');
+  if(x){ imgs.splice(+x.dataset.x,1); renderImgs(); }
+  if(m){ const i=+m.dataset.i, j=i+(+m.dataset.m); if(j<0||j>=imgs.length) return; [imgs[i],imgs[j]]=[imgs[j],imgs[i]]; renderImgs(); }
+});
+async function shrink(file){
+  try{
+    const bmp=await createImageBitmap(file), M=1800, s=Math.min(1,M/Math.max(bmp.width,bmp.height));
+    const c=document.createElement('canvas'); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(b=>r(b||file),'image/jpeg',.86));
+  }catch(e){ return file; }
+}
+$('#fFile').addEventListener('change',async e=>{
+  const files=[...e.target.files]; e.target.value=''; if(!files.length) return;
+  uploading+=files.length; renderImgs(); $('#dSave').disabled=true;
+  for(const f of files){
+    const blob=await shrink(f);
+    const path=`${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+    const {error}=await sb.storage.from(BUCKET).upload(path,blob,{contentType:'image/jpeg',upsert:false});
+    if(error) toast('图片上传失败：'+error.message);
+    else imgs.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+    uploading--; renderImgs();
+  }
+  $('#dSave').disabled=uploading>0;
+});
+$('#pForm').addEventListener('submit',async e=>{
+  e.preventDefault(); if(uploading) return;
+  const row={
+    title:$('#fTitle').value.trim(), price:Math.round((parseFloat($('#fPrice').value)||0)*100)/100,
+    category:$('#fCat').value, status:$('#fStatus').value, condition:$('#fCond').value.trim(),
+    grade:$('#fGrade').value.trim(), sort:parseInt($('#fSort').value,10)||0,
+    description:$('#fDesc').value.trim(), images:imgs.slice(0,20)
+  };
+  if(!row.title){ toast('请填写商品名称'); return; }
+  $('#dSave').disabled=true;
+  const q=editing?sb.from('products').update(row).eq('id',editing.id):sb.from('products').insert(row);
+  const {error}=await q;
+  $('#dSave').disabled=false;
+  if(error){ toast('保存失败：'+error.message); return; }
+  toast(editing?'已保存':'商品已添加'); closeDrawer(); loadAll();
+});
+$('#addBtn').onclick=()=>openDrawer(null);
+</script>
+</body>
+</html>
