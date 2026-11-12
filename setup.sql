@@ -88,11 +88,11 @@ insert into public.products (title, description, price, category, condition, gra
 select * from (values
   ('Saint Louis (Wave 1)',
    'Saint Louis minifigure, crafted with precision and care and printed on all six sides. Wave 1 includes two hair pieces, one of them an exclusive hair piece with an ahoge.',
-   260, 'Minifigs', 'New', 'A grade', 'active',
+   268, 'Minifigs', 'New', 'A grade', 'active',
    '["img/card.jpg","img/front.jpg","img/side.jpg","img/front2.jpg","img/box.jpg"]'::jsonb, 1),
   ('Saint Louis (B Grade)',
    'B-grade printed minifigure, designed by Douzi. B grade means some details may be slightly distorted or blurred, or have small alignment issues, but overall the flaws are negligible.',
-   200, 'Minifigs', 'New', 'B grade', 'active',
+   190, 'Minifigs', 'New', 'B grade', 'active',
    '["img/box.jpg","img/front.jpg"]'::jsonb, 2)
 ) as v(title, description, price, category, condition, grade, status, images, sort)
 where not exists (select 1 from public.products);
