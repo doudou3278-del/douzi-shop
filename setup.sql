@@ -104,3 +104,7 @@ where not exists (select 1 from public.products);
 --
 -- insert into public.admins (user_id) select id from auth.users where email = '你的邮箱@example.com';
 -- =====================================================================
+
+-- ---------- v2: Xianyu purchase links ----------
+alter table public.products add column if not exists buy_url text not null default '';
+alter table public.settings add column if not exists xianyu_url text not null default '';

@@ -167,6 +167,10 @@
   .how{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px;font-size:14px;color:#cfcbc3;margin-top:auto}
   .how b{color:var(--text)}
   .how .btn{margin-top:14px;width:100%;justify-content:center}
+  .how .btn.buy{margin:0 0 10px}
+  .how .btn.ghost{margin-top:10px}
+  .how-note{font-size:12px;color:var(--muted);margin-bottom:16px}
+  .how .btn.buy.off{opacity:.45;pointer-events:none}
   .close{position:absolute;top:14px;right:14px;z-index:3;width:40px;height:40px;border-radius:50%;background:rgba(11,11,12,.8);border:1px solid var(--line);font-size:18px}
   .close:hover{border-color:var(--text)}
   .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:12px 20px;border-radius:999px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;transition:.3s;z-index:300;pointer-events:none;max-width:90vw;text-align:center}
@@ -314,8 +318,10 @@
       <p class="desc" id="mDesc"></p>
       <div class="rows" id="mRows"></div>
       <div class="how">
-        <b>How to order:</b> send us a message on WeChat with the product name, and we'll confirm availability, payment and shipping.
-        <button class="btn primary" type="button" data-copy>Copy WeChat ID · <span class="wx"></span></button>
+        <a class="btn primary buy" id="mBuy" href="#" target="_blank" rel="noopener">Buy on Xianyu 闲鱼 ↗</a>
+        <p class="how-note" id="mBuyNote">Secure checkout on Xianyu — payment, shipping address and delivery are all handled there.</p>
+        <b>Questions?</b> Message us on WeChat.
+        <button class="btn ghost" type="button" data-copy>Copy WeChat ID · <span class="wx"></span></button>
       </div>
     </div>
   </div>
@@ -346,6 +352,7 @@ let settings = {wechat:'DamonZhu3278'};
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeSrc = s => (typeof s==='string' && /^(img\/|https:\/\/)/.test(s)) ? s : '';
+const safeLink = s => { const m = typeof s==='string' && s.match(/https:\/\/[^\s"'<>]+/); return m ? m[0] : ''; };
 const fmt = n => '¥' + (Number(n)||0).toFixed(2);
 
 /* ================= STOREFRONT ================= */
@@ -386,6 +393,10 @@ function openProduct(id){
   const im=(p.images||[]).map(safeSrc).filter(Boolean);
   $('#mCat').textContent=p.category||''; $('#mTitle').textContent=p.title||''; $('#mPrice').textContent=fmt(p.price); $('#mDesc').textContent=p.description||'';
   $('#mRows').innerHTML=[['Condition',p.condition],['Grade',p.grade],['Category',p.category]].filter(r=>r[1]).map(([k,v])=>`<div><span>${k}</span>${esc(v)}</div>`).join('');
+  const buy=safeLink(p.buy_url)||safeLink(settings.xianyu_url);
+  const b=$('#mBuy');
+  if(buy){ b.href=buy; b.classList.remove('off'); b.textContent=safeLink(p.buy_url)?'Buy on Xianyu 闲鱼 ↗':'Visit our Xianyu 闲鱼 shop ↗'; $('#mBuyNote').textContent='Secure checkout on Xianyu — payment, shipping address and delivery are all handled there.'; }
+  else { b.removeAttribute('href'); b.classList.add('off'); b.textContent='Coming soon on Xianyu 闲鱼'; $('#mBuyNote').textContent='Purchase link coming soon. Message us on WeChat in the meantime.'; }
   const show=i=>{ $('#mImg').src=im[i]||''; $('#mImg').alt=p.title||''; [...$('#mThumbs').children].forEach((t,j)=>t.classList.toggle('on',i===j)); };
   $('#mThumbs').innerHTML=im.map((src,i)=>`<button data-i="${i}" aria-label="Image ${i+1}"><img src="${esc(src)}" alt=""></button>`).join('');
   $('#mThumbs').onclick=e=>{ const b=e.target.closest('[data-i]'); if(b) show(+b.dataset.i); };
@@ -597,13 +608,13 @@ $('#replay').onclick=()=>{ scrollTo({top:0}); Intro.start(); };
     const sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
     const [p,s]=await Promise.all([
       sb.from('products').select('*').eq('status','active').order('sort',{ascending:true}).order('updated_at',{ascending:false}),
-      sb.from('settings').select('wechat').eq('id',1).maybeSingle()
+      sb.from('settings').select('*').eq('id',1).maybeSingle()
     ]);
     if(!p.error && Array.isArray(p.data)){
       products=p.data.map(r=>({...r,price:Number(r.price),updated:Date.parse(r.updated_at)||0,images:Array.isArray(r.images)?r.images:[]}));
       render();
     }
-    if(!s.error && s.data && s.data.wechat){ settings.wechat=s.data.wechat; renderWx(); }
+    if(!s.error && s.data){ if(s.data.wechat) settings.wechat=s.data.wechat; settings.xianyu_url=s.data.xianyu_url||''; renderWx(); }
   }catch(e){ console.warn('Supabase load failed, showing built-in products',e); }
 })();
 </script>

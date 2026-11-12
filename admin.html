@@ -124,7 +124,11 @@
     <div class="list" id="list"><div class="empty">正在加载…</div></div>
     <div class="box">
       <h3 style="font-size:18px;margin-bottom:14px">店铺设置</h3>
-      <form class="inline" id="setForm"><div class="field"><label for="wx">微信号（顾客复制的联系方式）</label><input id="wx" maxlength="60"></div><button class="btn primary" type="submit">保存</button></form>
+      <form id="setForm">
+        <div class="field"><label for="wx">微信号（顾客复制的联系方式）</label><input id="wx" maxlength="60"></div>
+        <div class="field"><label for="xy">闲鱼主页链接（商品没填闲鱼链接时，按钮会跳到这里）</label><input id="xy" maxlength="600" placeholder="在闲鱼「我的→个人主页→分享」复制链接，整段粘贴"></div>
+        <button class="btn primary" type="submit">保存设置</button>
+      </form>
     </div>
   </main>
 </section>
@@ -144,6 +148,7 @@
       <div class="field"><label for="fGrade">等级 Grade（可空）</label><input id="fGrade" maxlength="40" placeholder="A grade"></div>
       <div class="field"><label for="fSort">排序（数字小的在前）</label><input id="fSort" type="number" step="1"></div>
     </div>
+    <div class="field"><label for="fBuy">闲鱼商品链接（在闲鱼点"分享→复制链接"，整段粘贴进来即可）</label><input id="fBuy" maxlength="600" placeholder="【闲鱼】https://m.tb.cn/... 或 https://www.goofish.com/item?id=..."></div>
     <div class="field"><label for="fDesc">商品描述（英文）</label><textarea id="fDesc" maxlength="3000"></textarea></div>
     <div class="field"><label>商品图片（第一张是封面，用箭头调整顺序）</label>
       <div class="imgs" id="fImgs"></div>
@@ -165,6 +170,8 @@
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>'¥'+(Number(n)||0).toFixed(2);
+// pull the first https link out of a pasted Xianyu share text
+const extractLink=s=>{ const m=String(s||'').match(/https:\/\/[^\s"'<>，。】]+/); return m?m[0]:''; };
 const BUCKET='product-images';
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
 
@@ -199,11 +206,11 @@ $('#logout').onclick=()=>sb.auth.signOut();
 async function loadAll(){
   const [p,s]=await Promise.all([
     sb.from('products').select('*').order('sort',{ascending:true}).order('updated_at',{ascending:false}),
-    sb.from('settings').select('wechat').eq('id',1).maybeSingle()
+    sb.from('settings').select('*').eq('id',1).maybeSingle()
   ]);
   if(p.error){ $('#list').innerHTML=`<div class="empty">加载失败：${esc(p.error.message)}</div>`; return; }
   products=p.data||[];
-  if(s.data) $('#wx').value=s.data.wechat||'';
+  if(s.data){ $('#wx').value=s.data.wechat||''; $('#xy').value=s.data.xianyu_url||''; }
   renderList();
 }
 function renderList(){
@@ -212,7 +219,7 @@ function renderList(){
   $('#list').innerHTML=products.length?products.map(p=>{const im=(p.images||[])[0];return `
     <div class="row" data-id="${esc(p.id)}">
       ${im?`<img src="${esc(im)}" alt="">`:'<div class="ph"></div>'}
-      <div><div class="t">${esc(p.title)}</div><div class="s">${esc(p.category)} · ${fmt(p.price)}${p.grade?' · '+esc(p.grade):''}</div></div>
+      <div><div class="t">${esc(p.title)}</div><div class="s">${esc(p.category)} · ${fmt(p.price)}${p.grade?' · '+esc(p.grade):''} · ${p.buy_url?'<span style="color:#7ee2a8">已填闲鱼链接</span>':'<span style="color:#e5a54d">未填闲鱼链接</span>'}</div></div>
       <div class="st"><span class="pill ${p.status==='hidden'?'off':'on'}">${p.status==='hidden'?'已下架':'上架中'}</span></div>
       <div class="acts">
         <button class="btn ghost" data-a="edit">编辑</button>
@@ -238,9 +245,10 @@ $('#list').addEventListener('click',async e=>{
   }
 });
 $('#setForm').addEventListener('submit',async e=>{
-  e.preventDefault(); const v=$('#wx').value.trim(); if(!v) return;
-  const {error}=await sb.from('settings').upsert({id:1,wechat:v});
-  toast(error?'保存失败：'+error.message:'微信号已保存');
+  e.preventDefault(); const v=$('#wx').value.trim();
+  const xy=extractLink($('#xy').value); $('#xy').value=xy;
+  const {error}=await sb.from('settings').upsert({id:1,wechat:v,xianyu_url:xy});
+  toast(error?'保存失败：'+error.message:'设置已保存');
 });
 
 /* ---------- confirm ---------- */
@@ -255,7 +263,7 @@ function openDrawer(p){
   $('#dTitle').textContent=p?'编辑商品':'添加商品';
   $('#fTitle').value=p?.title||''; $('#fPrice').value=p?.price??''; $('#fCat').value=p?.category||'Minifigs';
   $('#fStatus').value=p?.status||'active'; $('#fCond').value=p?.condition??'New'; $('#fGrade').value=p?.grade||'';
-  $('#fSort').value=p?.sort??0; $('#fDesc').value=p?.description||'';
+  $('#fSort').value=p?.sort??0; $('#fDesc').value=p?.description||''; $('#fBuy').value=p?.buy_url||'';
   renderImgs(); $('#drawer').classList.add('open');
 }
 function closeDrawer(){ $('#drawer').classList.remove('open'); }
@@ -300,7 +308,7 @@ $('#pForm').addEventListener('submit',async e=>{
     title:$('#fTitle').value.trim(), price:Math.round((parseFloat($('#fPrice').value)||0)*100)/100,
     category:$('#fCat').value, status:$('#fStatus').value, condition:$('#fCond').value.trim(),
     grade:$('#fGrade').value.trim(), sort:parseInt($('#fSort').value,10)||0,
-    description:$('#fDesc').value.trim(), images:imgs.slice(0,20)
+    description:$('#fDesc').value.trim(), images:imgs.slice(0,20), buy_url:extractLink($('#fBuy').value)
   };
   if(!row.title){ toast('请填写商品名称'); return; }
   $('#dSave').disabled=true;
