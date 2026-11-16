@@ -618,5 +618,24 @@ $('#replay').onclick=()=>{ scrollTo({top:0}); Intro.start(); };
   }catch(e){ console.warn('Supabase load failed, showing built-in products',e); }
 })();
 </script>
+<!-- Visit counter: logs one anonymous visit per browser session to Supabase (table: visits) -->
+<script>
+(function logVisit(){
+  const cfg = window.DOUZI_CONFIG || {};
+  if (!window.supabase || !cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes('YOUR-')) return;
+  try {
+    if (sessionStorage.getItem('douzi_logged')) return;
+    sessionStorage.setItem('douzi_logged', '1');
+    let vid = localStorage.getItem('douzi_vid');
+    if (!vid) { vid = crypto.randomUUID(); localStorage.setItem('douzi_vid', vid); }
+    const sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+    sb.from('visits').insert({
+      visitor_id: vid,
+      path: location.pathname.slice(0, 200),
+      referrer: document.referrer.slice(0, 500)
+    }).then(() => {}, () => {});
+  } catch (e) { /* never break the page over analytics */ }
+})();
+</script>
 </body>
 </html>
